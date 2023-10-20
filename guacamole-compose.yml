@@ -1,0 +1,82 @@
+version: '3.4'
+services: 
+  guacd:
+    image: guacamole/guacd
+    container_name: guacd
+    hostname: guacd
+    restart: unless-stopped
+    volumes:
+      - ./guacd/drive:/drive:rw
+      - ./guacd/record:/record:rw
+    ports:
+      - "4822:4822"
+    networks:
+      - guacamole_network
+      - proxy
+  guacamole:
+    image: guacamole/guacamole
+    container_name: guacamole
+    hostname: guacamole
+    restart: unless-stopped
+    depends_on:
+      - guacd
+      - guacamole-db
+    environment:
+      GUACD_HOSTNAME: guacd
+      POSTGRES_HOSTNAME: guacamole-db
+      POSTGRES_DATABASE: guacamole_db
+      POSTGRES_USER: guacamole_user
+      POSTGRES_PASSWORD: ${GUACAMOLE_PASSWORD}
+      GUACAMOLE_HOME: /opt/guacamole
+      EXTENSIONS: auth-totp
+    networks:
+      - guacamole_network
+      - proxy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./extensions:/opt/guacamole/extensions:rw
+    labels:
+      - "traefik.enable=true"
+      # Define the router
+      - 'traefik.http.routers.guacamole.rule=Host(`guac.${DOMAIN}`)'
+      # Define the backend service and port
+      - "traefik.http.routers.guacamole.service=guacamole"
+      - "traefik.http.services.guacamole.loadBalancer.server.port=8080"
+      # Ensure HTTPS and use the correct cert resolver
+      - "traefik.http.routers.guacamole.tls=true"
+      - "traefik.http.routers.guacamole.tls.certresolver=cloudflare"
+      # Optional: HTTP to HTTPS redirection
+      - "traefik.http.routers.guacamole.entrypoints=http"
+      - "traefik.http.routers.guacamole.middlewares=guacamole-https-redirect,guacamole-headers"
+      # Optional: Security headers
+      - "traefik.http.middlewares.guacamole-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.guacamole-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.guacamole-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.guacamole-headers.headers.SSLRedirect=true"
+      - "traefik.http.middlewares.guacamole-headers.headers.STSIncludeSubdomains=true"
+      - "traefik.http.middlewares.guacamole-headers.headers.STSPreload=true"
+      # HTTP to HTTPS redirection middleware
+      - "traefik.http.middlewares.guacamole-https-redirect.redirectscheme.scheme=https"
+
+  guacamole-db:
+    image: postgres:13.4-buster
+    container_name: guacamole-db
+    hostname: guacamole-db
+    environment:
+      POSTGRES_USER: guacamole_user
+      POSTGRES_PASSWORD: '${GUACAMOLE_PASSWORD}'
+      POSTGRES_DB: guacamole_db
+      PGDATA: /var/lib/postgresql/data/guacamole
+    restart: unless-stopped
+    volumes:
+      - ./init/:/docker-entrypoint-initdb.d  # ensure dir is `chmod +x` 
+      - ./pgdata:/var/lib/postgresql/data:Z
+    networks:
+      - guacamole_network
+
+networks:
+  proxy:
+    external: true
+  guacamole_network:
+    external: false

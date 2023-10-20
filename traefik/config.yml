@@ -1,0 +1,209 @@
+http:
+ #region routers
+  routers:
+    nuc:
+      entryPoints:
+        - "https"
+      rule: "Host(`nuc.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: nuc
+    pihole:
+      entryPoints:
+        - "https"
+      rule: "Host(`pihole.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - addprefix-pihole
+        - https-redirectscheme
+      tls: {}
+      service: pihole
+    heimdall:
+      entryPoints:
+        - "https"
+      rule: "Host(`heimdall.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: heimdall
+    guacamole:
+      entryPoints:
+        - "https"
+      rule: "Host(`guac.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: guacamole
+    mealie:
+      entryPoints:
+        - "https"
+      rule: "Host(`mealie.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: mealie
+    freshrss:
+      entryPoints:
+        - "https"
+      rule: "Host(`freshrss.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: freshrss
+    dashy:
+      entryPoints:
+        - "https"
+      rule: "Host(`dashy.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: dashy
+    homarr:
+      entryPoints:
+        - "https"
+      rule: "Host(`homarr.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: homarr
+    wikijs:
+      entryPoints:
+        - "https"
+      rule: "Host(`wikijs.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: wikijs
+    spotify:
+      entryPoints:
+        - "https"
+      rule: "Host(`spotify.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: spotify
+    kuma:
+      entryPoints:
+        - "https"
+      rule: "Host(`kuma.your.domain.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: kuma
+
+#endregion
+#region services
+  services:
+    nuc:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    pihole:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    heimdall:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    guacamole:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    mealie:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    freshrss:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    dashy:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    homarr:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    wikijs:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    spotify:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+    kuma:
+      loadBalancer:
+        servers:
+          - url: "your_services_ip:port"
+        passHostHeader: true
+
+#endregion
+  middlewares:
+    addprefix-pihole:
+      addPrefix:
+        prefix: "/admin"
+    https-redirectscheme:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+    default-headers:
+      headers:
+        frameDeny: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 15552000
+        customFrameOptionsValue: SAMEORIGIN
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+
+    idrac:
+      headers:
+        frameDeny: true
+        browserXssFilter: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsSeconds: 15552000
+        customFrameOptionsValue: SAMEORIGIN
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+
+    default-whitelist:
+      ipWhiteList:
+        sourceRange:
+        - "10.0.0.0/8"
+        - "192.168.0.0/16"
+        - "172.16.0.0/12"
+
+    secured:
+      chain:
+        middlewares:
+        - default-whitelist
+        - default-headers

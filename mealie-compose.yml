@@ -1,0 +1,51 @@
+version: '3.4'
+services:
+  mealie:
+    container_name: mealie
+    image: mealie:dev
+    build:
+      context: .
+      target: production
+      dockerfile: ./docker/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - mealie-data:/app/data/
+    ports:
+      - 9091:9000
+    environment:
+      ALLOW_SIGNUP: "false"
+      DB_ENGINE: sqlite
+      WEB_GUNICORN: "false"
+      WORKERS_PER_CORE: 0.5
+      MAX_WORKERS: 1
+      WEB_CONCURRENCY: 1
+    networks:
+      - proxy
+      - mealie_network
+    labels:
+      - "traefik.enable=true"
+      - 'traefik.http.routers.mealie.rule=Host(`mealie.your.domain.com`)'
+      - "traefik.http.routers.mealie.service=mealie"
+      - "traefik.http.services.mealie.loadBalancer.server.port=9000"
+      - "traefik.http.routers.mealie.tls=true"
+      - "traefik.http.routers.mealie.tls.certresolver=cloudflare"
+      - "traefik.http.routers.mealie.entrypoints=http"
+      - "traefik.http.routers.mealie.middlewares=mealie-https-redirect,mealie-headers"
+      # Add security headers similar to your guacamole setup
+      - "traefik.http.middlewares.mealie-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.mealie-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.mealie-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.mealie-headers.headers.SSLRedirect=true"
+      - "traefik.http.middlewares.mealie-headers.headers.STSIncludeSubdomains=true"
+      - "traefik.http.middlewares.mealie-headers.headers.STSPreload=true"
+      - "traefik.http.middlewares.mealie-https-redirect.redirectscheme.scheme=https"
+
+volumes:
+  mealie-data:
+    driver: local
+
+networks:
+  proxy:
+    external: true
+  mealie_network:
+    external: false

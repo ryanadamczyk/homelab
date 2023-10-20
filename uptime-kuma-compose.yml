@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    volumes:
+      - uptime-kuma:/app/data
+    networks:
+      - proxy
+    ports:
+      - "3001:3001" 
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - 'traefik.http.routers.kuma.rule=Host(`kuma.your.domain.com`)'
+      - "traefik.http.routers.kuma.service=kuma"
+      - "traefik.http.services.kuma.loadBalancer.server.port=3001"
+      - "traefik.http.routers.kuma.tls=true"
+      - "traefik.http.routers.kuma.tls.certresolver=cloudflare"
+      - "traefik.http.routers.kuma.entrypoints=http"
+      - "traefik.http.routers.kuma.middlewares=kuma-https-redirect,kuma-headers"
+      # Add security headers similar to your guacamole setup
+      - "traefik.http.middlewares.kuma-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.kuma-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.kuma-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.kuma-headers.headers.SSLRedirect=true"
+      - "traefik.http.middlewares.kuma-headers.headers.STSIncludeSubdomains=true"
+      - "traefik.http.middlewares.kuma-headers.headers.STSPreload=true"
+      - "traefik.http.middlewares.kuma-https-redirect.redirectscheme.scheme=https"
+
+volumes:
+  uptime-kuma:
+
+networks:
+  proxy:
+    external: true
+
